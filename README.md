@@ -53,3 +53,45 @@ Ensure the following dependencies are installed:
    ```
 
    ## Usage
+   After installation, GhostARP can be executed from the terminal. The tool will prompt you for the Target IP and Gateway IP to initiate the ARP spoofing process
+
+
+   ### Example Output
+<b>DEMO VIDEO </b>
+ <a href="https://youtu.be/@alxhacks" target="_blank">
+    <img src="https://raw.githubusercontent.com/maurodesouza/profile-readme-generator/master/src/assets/icons/social/youtube/default.svg" width="32" height="25" alt="youtube logo"  />
+  </a>
+  
+  <p align="center"><img src="https://www.imghost.net/ib/CVPFeSCQEvU5fKS_1727111195.png" width="50%" height="20%"/></p> 
+  
+### Need Help?
+For a detailed list of options and usage instructions, simply run:
+```bash
+python ghostarp.py -h
+```
+## Operating Systems
+
+GhostARP is compatible with:
+
+- **Windows**: Use Command Prompt or PowerShell.
+- **macOS**: Utilize Terminal for seamless execution.
+- **Linux**: Run in any terminal emulator of your choice.
+
+## Contributing
+
+We welcome contributions from the community! If you have ideas for improvements or new features, please follow these steps:
+
+1. **Fork the repository**.
+2. **Create a new branch** (`git checkout -b feature/YourFeature`).
+3. **Make your changes** and commit them (`git commit -m 'Add some feature'`).
+4. **Push your branch** (`git push origin feature/YourFeature`).
+5. **Open a pull request**.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- Special thanks to [Scapy](https://scapy.readthedocs.io/en/latest/) for powering this tool.
+- Inspired by various network scanning tools and the open-source community.
