@@ -58,7 +58,7 @@ Ensure the following dependencies are installed:
 
    ### Example Output
 <b>DEMO VIDEO </b>
- <a href="https://youtu.be/@alxhacks" target="_blank">
+ <a href="https://www.youtube.com/@Alxhacks" target="_blank">
     <img src="https://raw.githubusercontent.com/maurodesouza/profile-readme-generator/master/src/assets/icons/social/youtube/default.svg" width="32" height="25" alt="youtube logo"  />
   </a>
   
