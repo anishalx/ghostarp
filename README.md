@@ -33,6 +33,7 @@ By mimicking legitimate ARP packets, GhostARP allows you to reroute network traf
 Ensure the following dependencies are installed:
 - Python 3.x
 - Scapy (for crafting and sending ARP packets)
+- colorama library
 
 ### Steps
 
@@ -44,16 +45,39 @@ Ensure the following dependencies are installed:
    
 2. Install the required dependencies:
    ```bash
-   pip install scapy
+   pip install scapy colorama
    ```
    
 3. Run the tool:
    ```bash
-   python3 ghostarp.py
+   python ghostarp.py
    ```
 
    ## Usage
-   After installation, GhostARP can be executed from the terminal. The tool will prompt you for the Target IP and Gateway IP to initiate the ARP spoofing process
+   After installation, GhostARP can be executed from the terminal. The tool will prompt you for the Target IP and Gateway IP to initiate the ARP spoofing process.
+
+1. **Run the Tool**
+
+   Execute the script with the following command:
+
+   ```bash
+   python ghostarp.py
+   ```
+2. **Input Required Information**
+   
+    - You will be prompted to enter the target IP address.
+    - Enter the IP address of the gateway.
+
+Ensure that both IPs are valid and reachable on your network.
+
+3. **Start Spoofing**
+   
+   The tool will start sending spoofed ARP packets. You will see the count of packets sent in real-time.
+
+4. **Stopping the Tool**
+   
+   To stop the tool, press Ctrl + C. The tool will automatically restore the ARP tables for both the target and the gateway.
+   
 
 
    ### Example Output
@@ -83,6 +107,10 @@ GhostARP is compatible with:
 - **macOS**: Utilize Terminal for seamless execution.
 - **Linux**: Run in any terminal emulator of your choice.
 
+## Important Notes
+- Ethical Use: This tool should only be used in environments where you have permission to test. Unauthorized use on networks can lead to legal consequences.
+  
+- Network Impact: ARP spoofing can disrupt network operations; ensure you conduct tests in controlled environments.
 ## Contributing
 
 We welcome contributions from the community! If you have ideas for improvements or new features, please follow these steps:
