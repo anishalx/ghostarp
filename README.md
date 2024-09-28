@@ -62,7 +62,13 @@ Ensure the following dependencies are installed:
     <img src="https://raw.githubusercontent.com/maurodesouza/profile-readme-generator/master/src/assets/icons/social/youtube/default.svg" width="32" height="25" alt="youtube logo"  />
   </a>
   
-  <p align="center"><img src="https://www.imghost.net/ib/CVPFeSCQEvU5fKS_1727111195.png" width="50%" height="20%"/></p> 
+  <p align="center"><img src="https://www.imghost.net/ib/msgDOsa85O9jeOX_1727550519.png" width="50%" height="20%"/></p> 
+
+**Target machine**
+  
+  <p align="center"><img src="https://www.imghost.net/ib/66TVSvgknGryKpW_1727550982.png"" width="50%" height="20%"/></p> 
+
+
   
 ### Need Help?
 For a detailed list of options and usage instructions, simply run:
