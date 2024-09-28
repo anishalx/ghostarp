@@ -1,27 +1,11 @@
 #!/usr/bin/env python
 
+from banner.ghostbanner import *
+# from termcolor import colored
 import scapy.all as scapy
 import time
 
-# GhostARP Banner with Yellow Color
-def display_banner():
-    yellow = "\033[93m"
-    reset = "\033[0m"
-    banner = yellow + """
-          ________.__                    __     _____ ____________________ 
-         /  _____/|  |__   ____  _______/  |_  /  _  \\______   \______   \
-        /   \  ___|  |  \ /  _ \/  ___/\   __\/  /_\  \|       _/|     ___/
-        \    \_\  \   Y  (  <_> )___ \  |  | /    |    \    |   \|    |    
-         \______  /___|  /\____/____  > |__| \____|__  /____|_  /|____|    
-                \/     \/           \/               \/       \/                    
-                       ---- Stealth ARP Spoofing Tool ----
-        ===================================================================
-                       𝕍𝕖𝕣𝕤𝕚𝕠𝕟 : 1.0     𝕋𝕨𝕚𝕥𝕥𝕖𝕣 : anishalx7        
-        ===================================================================              
-    """ + reset
-    print(banner)
 
-display_banner()
 
 def get_mac(ip):
     arp_request = scapy.ARP(pdst=ip)
@@ -73,3 +57,4 @@ except KeyboardInterrupt:
     restore(target_ip, gateway_ip)
     restore(gateway_ip, target_ip)
     print("[+] ARP tables restored. Exiting.")
+
