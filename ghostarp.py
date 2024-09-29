@@ -20,6 +20,10 @@ banner = f"""
 {Style.BRIGHT}{Fore.YELLOW}                 ===================================================================    
 {Style.RESET_ALL}
 """
+LEGAL_DISCLAIMER = "\n[!] Legal disclaimer: Usage of GhostARP for attacking targets without prior mutual consent is illegal. It is the end user's responsibility to obey all applicable local, state, and federal laws. Developer assumes no liability and is not responsible for any misuse or damage caused by this program."
+
+def print_colored_disclaimer():
+    print(f"{Style.BRIGHT}{Fore.WHITE}{LEGAL_DISCLAIMER}{Style.RESET_ALL}")
 
 def get_mac(ip):
     arp_request = scapy.ARP(pdst=ip)
@@ -56,6 +60,7 @@ def is_valid_ip(ip):
 
 def main():
     print(banner)  # Print the banner
+    print_colored_disclaimer()  # Print the legal disclaimer
 
     # Ask the user for target and gateway IPs with validation
     while True:
