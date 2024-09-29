@@ -20,6 +20,7 @@ banner = f"""
 {Style.BRIGHT}{Fore.YELLOW}                 ===================================================================    
 {Style.RESET_ALL}
 """
+
 LEGAL_DISCLAIMER = "\n[!] Legal disclaimer: Usage of GhostARP for attacking targets without prior mutual consent is illegal. It is the end user's responsibility to obey all applicable local, state, and federal laws. Developer assumes no liability and is not responsible for any misuse or damage caused by this program."
 
 def print_colored_disclaimer():
@@ -53,6 +54,7 @@ def restore(destination_ip, source_ip):
         return  # Exit if source MAC address could not be obtained
     packet = scapy.ARP(op=2, pdst=destination_ip, hwdst=destination_mac, psrc=source_ip, hwsrc=source_mac)
     scapy.send(packet, count=4, verbose=False)
+    print(f"[+] Restored ARP table for {destination_ip}")
 
 def is_valid_ip(ip):
     pattern = r"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$"
@@ -78,6 +80,9 @@ def main():
             break  # Exit the loop if both IPs are valid
         except KeyboardInterrupt:
             print("\n[!] Script interrupted by user. Exiting gracefully.")
+            return
+        except Exception as e:
+            print(f"[!] Unexpected error: {str(e)}")
             return
 
     sent_packets_count = 0
