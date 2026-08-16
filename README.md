@@ -1,133 +1,113 @@
-# GhostARP - Stealth ARP Spoofing Tool
+# GhostARP
 
-```bash
+```text
                    ________.__                    __     _____ ____________________ 
-                  /  _____/|  |__   ____  _______/  |_  /  _  \\______   \______   \
+                  /  _____/|  |__   ____  _______/  |_  /  _  \______   \______   \
                  /   \  ___|  |  \ /  _ \/  ___/\   __\/  /_\  \|       _/|     ___/
                  \    \_\  \   Y  (  <_> )___ \  |  | /    |    \    |   \|    |    
                   \______  /___|  /\____/____  > |__| \____|__  /____|_  /|____|    
                          \/     \/           \/               \/       \/                    
                                 ---- Stealth ARP Spoofing Tool ----
-                 ===================================================================
-                                𝕍𝕖𝕣𝕤𝕚𝕠𝕟 : 1.0     𝕋𝕨𝕚𝕥𝕥𝕖𝕣 : anishalx7        
-                 ===================================================================    
+```
 
-``` 
 ## Overview
 
-**GhostARP** is a powerful yet lightweight ARP spoofing tool, engineered for penetration testers, cybersecurity professionals, and ethical hackers. Designed with efficiency in mind, GhostARP allows users to conduct ARP spoofing attacks with minimal network disruption, enabling detailed traffic analysis and network vulnerability assessments.
+**GhostARP** is an ARP spoofing / Man-in-the-Middle (MitM) testing tool for authorized network
+security assessments. By sending spoofed ARP replies, it reroutes traffic between a target and the
+gateway through your machine so you can analyze it — and it always restores the real ARP tables
+when the run stops.
 
-By mimicking legitimate ARP packets, GhostARP allows you to reroute network traffic between the target and gateway, effectively performing **Man-in-the-Middle (MitM)** attacks. Whether for educational purposes or professional security assessments, GhostARP ensures the integrity of your tests by restoring ARP tables once the operation is terminated.
+GhostARP v2.0 is a full rewrite: a structured Python package with a real command-line interface,
+strict input validation, automatic gateway detection and host discovery, robust error handling,
+and a unit-tested engine that never leaves the network poisoned.
 
-## Key Features
+## Features
 
-- **Stealth Mode**: Operates with minimal packet flooding to avoid detection.
-- **User-Friendly**: Simple and intuitive command-line interface for quick usage.
-- **Auto ARP Restoration**: Automatically resets ARP tables after interruption or shutdown.
-- **Real-Time Packet Count**: Displays the number of spoofed packets sent during operation.
-- **Customizable**: Easily adaptable for various network configurations and scenarios.
-  
+- **Real CLI** — `-t/--target`, `-g/--gateway`, `-i/--interface`, `--interval`, `--jitter`,
+  `--timeout`, `--retries`, `-q/--quiet`, `-v/--verbose`, `--version` (`ghostarp -h`).
+- **Auto-discovery** — gateway is detected from the routing table; if no target is given, the
+  local subnet is ARP-scanned and live hosts are listed for selection (or auto-picked when there
+  is exactly one).
+- **Strict validation** — IPv4 addresses are checked with the stdlib `ipaddress` module; the tool
+  refuses to spoof itself or to run with a target equal to the gateway.
+- **Reliable ARP handling** — MAC resolution is cached per run and retried with backoff; a host
+  that disappears mid-run is skipped gracefully instead of crashing.
+- **Guaranteed restore** — ARP tables are restored on Ctrl+C *and* on any unexpected error via
+  `try/finally`, so the network is left clean.
+- **Lazy scapy import** — the package imports and tests cleanly without scapy; running without it
+  gives a clear install hint.
+- **Test suite** — pytest coverage of the engine, network helpers and CLI with the network layer
+  fully mocked (no root, no packets, no scapy needed to run the tests).
+
+## Requirements
+
+- Python 3.9+
+- [scapy](https://scapy.readthedocs.io/) >= 2.5 and `colorama` (see `requirements.txt`)
+- Packet injection privileges: root/sudo on Linux and macOS; on Windows, install
+  [Npcap](https://npcap.com/) and run from an elevated prompt.
+
 ## Installation
 
-### Requirements
-Ensure the following dependencies are installed:
-- Python 3.x
-- Scapy (for crafting and sending ARP packets)
-- colorama library
-
-### Steps
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/anishalx/ghostarp.git
-   cd ghostarp
-   ```
-   
-2. Install the required dependencies:
-   ```bash
-   pip install scapy colorama
-   ```
-   
-3. Run the tool:
-   ```bash
-   python ghostarp.py
-   ```
-
-   ## Usage
-   After installation, GhostARP can be executed from the terminal. The tool will prompt you for the Target IP and Gateway IP to initiate the ARP spoofing process.
-
-1. **Run the Tool**
-
-   Execute the script with the following command:
-
-   ```bash
-   python ghostarp.py
-   ```
-2. **Input Required Information**
-   
-    - You will be prompted to enter the target IP address.
-    - Enter the IP address of the gateway.
-
-Ensure that both IPs are valid and reachable on your network.
-
-3. **Start Spoofing**
-   
-   The tool will start sending spoofed ARP packets. You will see the count of packets sent in real-time.
-
-4. **Stopping the Tool**
-   
-   To stop the tool, press Ctrl + C. The tool will automatically restore the ARP tables for both the target and the gateway.
-   
-
-
-   ### Example Output
-  
-  <p align="center"><img src="https://www.imghost.net/ib/msgDOsa85O9jeOX_1727550519.png" width="50%" height="20%"/></p> 
-
-**Target machine**
-  
-  <p align="center"><img src="https://www.imghost.net/ib/66TVSvgknGryKpW_1727550982.png"" width="50%" height="20%"/></p> 
-  
-## Demo 
-  <p align="center">
-  <a href="https://www.youtube.com/watch?v=YA0Ubqfw2ZU">
-    <img src="https://img.youtube.com/vi/YA0Ubqfw2ZU/maxresdefault.jpg" alt="Watch the video" width="600">
-  </a>
-</p>
-
-  
-### Need Help?
-For a detailed list of options and usage instructions, simply run:
 ```bash
-python ghostarp.py -h
+git clone https://github.com/anishalx/ghostarp.git
+cd ghostarp
+pip install -r requirements.txt
 ```
-## Operating Systems
 
-GhostARP is compatible with:
+## Usage
 
-- **Windows**: Use Command Prompt or PowerShell.
-- **macOS**: Utilize Terminal for seamless execution.
-- **Linux**: Run in any terminal emulator of your choice.
+```bash
+python -m ghostarp -t 192.168.1.50 -g 192.168.1.1   # explicit target + gateway
+# or
+python main.py -t 192.168.1.50 -g 192.168.1.1
+```
 
-## Important Notes
-- Ethical Use: This tool should only be used in environments where you have permission to test. Unauthorized use on networks can lead to legal consequences.
-  
-- Network Impact: ARP spoofing can disrupt network operations; ensure you conduct tests in controlled environments.
-## Contributing
+| Option | Description |
+| --- | --- |
+| `-t, --target IP` | Target IP address. If omitted, live hosts are auto-discovered and you select one. |
+| `-g, --gateway IP` | Gateway IP address. If omitted, it is detected from the routing table. |
+| `-i, --interface NAME` | Network interface (defaults to the system default route). |
+| `--interval SECONDS` | Delay between spoof cycles (default `2.0`). |
+| `--jitter SECONDS` | Add a random delay of `0..jitter` to each interval (default `0.0`). |
+| `--timeout SECONDS` | Seconds to wait for ARP replies (default `1.0`). |
+| `--retries N` | ARP resolution retries per address (default `3`). |
+| `-q, --quiet` | Suppress the banner and disclaimer. |
+| `-v, --verbose` | Debug-level logging. |
+| `--version` | Print the version and exit. |
 
-We welcome contributions from the community! If you have ideas for improvements or new features, please follow these steps:
+### Examples
 
-1. **Fork the repository**.
-2. **Create a new branch** (`git checkout -b feature/YourFeature`).
-3. **Make your changes** and commit them (`git commit -m 'Add some feature'`).
-4. **Push your branch** (`git push origin feature/YourFeature`).
-5. **Open a pull request**.
+```bash
+# Gateway auto-detected, target given explicitly
+python -m ghostarp -t 192.168.1.50
+
+# Fully automatic: gateway detected, subnet scanned, target selected interactively
+python -m ghostarp
+
+# Specific interface, slower and less disruptive cadence
+python -m ghostarp -t 192.168.1.50 -g 192.168.1.1 -i eth0 --interval 5 --jitter 2
+```
+
+The tool prints a running packet count and stops on Ctrl+C. Before exiting it re-resolves and
+restores the real ARP entries for both the target and the gateway.
+
+## Development
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest -v
+```
+
+The tests mock the entire network layer, so they run anywhere — no root privileges, no live
+packets, and no scapy required. CI (`.github/workflows/ci.yml`) runs them on Python 3.9–3.13.
+
+## Safety & Ethics
+
+ARP spoofing is a network attack technique. **Only use GhostARP on networks you own or have
+explicit written permission to test.** Unauthorized interception of traffic is illegal in most
+jurisdictions. The tool prints a legal disclaimer at startup and is intended solely for
+penetration testing, security research, and education.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- Special thanks to [Scapy](https://scapy.readthedocs.io/en/latest/) for powering this tool.
-- Inspired by various network scanning tools and the open-source community.
+MIT — see [LICENSE](LICENSE).
