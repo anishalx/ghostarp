@@ -93,6 +93,37 @@ def test_main_happy_path(monkeypatch, capsys):
     assert captured["cycles"] == 7
 
 
+def test_main_unexpected_error_clean_message(monkeypatch, capsys):
+    class BoomSpoofer:
+        def __init__(self, **kwargs):
+            pass
+
+        def run(self, progress=None):
+            raise RuntimeError("Npcap is not installed")
+
+    monkeypatch.setattr(cli, "Spoofer", BoomSpoofer)
+    monkeypatch.setattr(cli, "get_route_source", lambda *a, **k: "192.168.1.100")
+    rc = cli.main(["-t", "192.168.1.50", "-g", "192.168.1.1", "-q"])
+    assert rc == 2
+    err = capsys.readouterr().err
+    assert "Unexpected error" in err
+    assert "Npcap is not installed" in err
+
+
+def test_main_unexpected_error_traceback_in_verbose(monkeypatch):
+    class BoomSpoofer:
+        def __init__(self, **kwargs):
+            pass
+
+        def run(self, progress=None):
+            raise RuntimeError("boom")
+
+    monkeypatch.setattr(cli, "Spoofer", BoomSpoofer)
+    monkeypatch.setattr(cli, "get_route_source", lambda *a, **k: "192.168.1.100")
+    with pytest.raises(RuntimeError, match="boom"):
+        cli.main(["-t", "192.168.1.50", "-g", "192.168.1.1", "-q", "-v"])
+
+
 def test_main_auto_detects_gateway(monkeypatch, capsys):
     class FakeSpoofer:
         def __init__(self, **kwargs):

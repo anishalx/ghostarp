@@ -45,13 +45,30 @@ def get_route_source(dst_ip: str, interface: Optional[str] = None) -> Optional[s
         return None
 
 
+def _is_connected_route(gw) -> bool:
+    """Return True if a route entry is directly connected (has no gateway).
+
+    Older scapy versions store the gateway as the int ``0``; newer ones
+    (e.g. 2.7) use the string ``"0.0.0.0"`` for connected routes.
+    """
+    if gw is None or gw == 0 or gw == "":
+        return True
+    try:
+        return int(ipaddress.IPv4Address(str(gw))) == 0
+    except ValueError:
+        return False
+
+
 def get_local_network(interface: Optional[str] = None) -> Optional[ipaddress.IPv4Network]:
     """Return the directly connected IPv4 subnet for the (default) interface, or None."""
     scapy = get_scapy()
     try:
         default_iface = scapy.conf.route.route("0.0.0.0")[0] if interface is None else interface
         for net, mask, gw, iface, out_ip, metric in scapy.conf.route.routes:
-            if iface != default_iface or gw != 0 or mask == 0:
+            if iface != default_iface or not _is_connected_route(gw):
+                continue
+            mask = int(mask)
+            if mask == 0:
                 continue
             # scapy stores the mask as an int bitmask; convert it to a prefix length
             prefix = bin(mask).count("1")

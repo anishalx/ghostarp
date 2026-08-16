@@ -71,6 +71,17 @@ def test_get_local_network_ignores_default_route(monkeypatch):
     assert str(get_local_network()) == "192.168.1.0/24"
 
 
+def test_get_local_network_scapy_27_string_gateway(monkeypatch):
+    """scapy 2.7+ stores the gateway as '0.0.0.0' and out-IP as a string."""
+    routes = [
+        (0, 0, "192.168.1.1", "eth0", SELF_IP, 45),  # default route (string gw)
+        (NET, MASK, "0.0.0.0", "eth0", SELF_IP, 301),  # connected route (string gw)
+    ]
+    fake = make_fake_scapy(routes=routes)
+    monkeypatch.setattr(network, "get_scapy", lambda: fake)
+    assert str(get_local_network()) == "192.168.1.0/24"
+
+
 def test_scan_hosts_excludes_self(monkeypatch):
     answers = [
         (None, _Recv(SELF_IP)),
@@ -88,6 +99,17 @@ def test_scan_hosts_without_subnet_raises(monkeypatch):
     monkeypatch.setattr(network, "get_scapy", lambda: fake)
     with pytest.raises(GhostARPError, match="subnet"):
         scan_hosts(timeout=1.0)
+
+
+@pytest.mark.parametrize(
+    "gw", [0, "0.0.0.0", None, ""],
+)
+def test_is_connected_route(gw):
+    assert network._is_connected_route(gw)
+
+
+def test_is_connected_route_rejects_real_gateway():
+    assert not network._is_connected_route("192.168.1.1")
 
 
 def test_missing_scapy_raises(monkeypatch):

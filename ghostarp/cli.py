@@ -213,6 +213,15 @@ def main(argv: Optional[List[str]] = None) -> int:
     except KeyboardInterrupt:
         print("\n[!] Interrupted.")
         return 130
+    except Exception as exc:  # unexpected runtime errors (permission, Npcap, etc.)
+        if args.verbose:
+            raise  # debug mode: full traceback
+        print(
+            f"{Style.BRIGHT}{Fore.RED}[!] Unexpected error: {exc}. "
+            f"Run with -v for a full traceback.{Style.RESET_ALL}",
+            file=sys.stderr,
+        )
+        return 2
 
 
 if __name__ == "__main__":
