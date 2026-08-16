@@ -1,4 +1,5 @@
 """Tests for ghostarp.core.Spoofer using a fully mocked scapy layer."""
+import logging
 import sys
 from typing import Dict, List, Optional
 
@@ -103,6 +104,11 @@ def test_jitter_clamped_to_interval():
     assert spoofer.interval == 1.0
 
 
+def test_negative_cycles_clamped_to_unlimited():
+    spoofer = Spoofer(TARGET, GATEWAY, cycles=-5)
+    assert spoofer.cycles == 0
+
+
 # --------------------------------------------------------------------------- #
 # MAC resolution
 # --------------------------------------------------------------------------- #
@@ -152,6 +158,43 @@ def test_spoof_partial_when_gateway_unresolvable():
     assert spoofer.spoof() == 1
     assert len(fake.sent) == 1
     assert fake.sent[0]["pkt"].pdst == TARGET
+
+
+def test_spoof_logs_packet_details(caplog):
+    spoofer, fake = make_spoofer({TARGET: TARGET_MAC, GATEWAY: GATEWAY_MAC})
+    with caplog.at_level(logging.DEBUG, logger="ghostarp.core"):
+        spoofer.spoof()
+    messages = [r.message for r in caplog.records if r.name == "ghostarp.core"]
+    assert any(
+        "psrc=192.168.1.1" in m and "pdst=192.168.1.50" in m and "hwdst=aa:bb:cc:dd:ee:01" in m
+        for m in messages
+    )
+    assert any(
+        "psrc=192.168.1.50" in m and "pdst=192.168.1.1" in m and "hwdst=aa:bb:cc:dd:ee:02" in m
+        for m in messages
+    )
+
+
+def test_restore_logs_packet_details(caplog):
+    spoofer, fake = make_spoofer({TARGET: TARGET_MAC, GATEWAY: GATEWAY_MAC})
+    with caplog.at_level(logging.DEBUG, logger="ghostarp.core"):
+        spoofer.restore()
+    messages = [r.message for r in caplog.records if r.name == "ghostarp.core"]
+    assert any(
+        "Sent restore ARP reply" in m
+        and "count=4" in m
+        and "hwsrc=aa:bb:cc:dd:ee:02" in m
+        and "hwdst=aa:bb:cc:dd:ee:01" in m
+        for m in messages
+    )
+
+
+def test_resolve_mac_logs_success(caplog):
+    spoofer, fake = make_spoofer({TARGET: TARGET_MAC})
+    with caplog.at_level(logging.DEBUG, logger="ghostarp.core"):
+        spoofer.resolve_mac(TARGET)
+    messages = [r.message for r in caplog.records if r.name == "ghostarp.core"]
+    assert any(f"Resolved MAC {TARGET_MAC} for {TARGET}" in m for m in messages)
 
 
 # --------------------------------------------------------------------------- #
@@ -219,8 +262,25 @@ def test_run_reports_progress():
         return 2
 
     spoofer.spoof = fake_spoof  # type: ignore[method-assign]
-    spoofer.run(progress=seen.append)
-    assert seen == [2]
+    spoofer.run(progress=lambda packets, cycles: seen.append((packets, cycles)))
+    assert seen == [(2, 1)]  # (packets, cycles)
+
+
+def test_run_stops_after_cycle_limit():
+    spoofer, fake = make_spoofer({TARGET: TARGET_MAC, GATEWAY: GATEWAY_MAC}, cycles=3)
+    spoofer.spoof = lambda: 2  # type: ignore[method-assign]
+    assert spoofer.run() == 6
+    # ARP tables are still restored after hitting the limit
+    restore_pkts = [e for e in fake.sent if e["kwargs"].get("count") == RESTORE_COUNT]
+    assert len(restore_pkts) == 2
+
+
+def test_run_progress_with_cycle_limit():
+    spoofer, fake = make_spoofer({TARGET: TARGET_MAC, GATEWAY: GATEWAY_MAC}, cycles=2)
+    spoofer.spoof = lambda: 2  # type: ignore[method-assign]
+    seen = []
+    spoofer.run(progress=lambda packets, cycles: seen.append((packets, cycles)))
+    assert seen == [(2, 1), (4, 2)]
 
 
 def test_missing_scapy_raises_helpful_error(monkeypatch):

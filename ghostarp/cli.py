@@ -70,6 +70,7 @@ def build_parser() -> argparse.ArgumentParser:
             "Examples:\n"
             "  ghostarp -t 192.168.1.50 -g 192.168.1.1          # explicit target + gateway\n"
             "  ghostarp -t 192.168.1.50                           # gateway auto-detected\n"
+            "  ghostarp -c 100                                    # 100 cycles, then exit\n"
             "  ghostarp                                          # gateway + target auto-discovered"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -95,6 +96,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--retries", type=int, default=3, help="ARP resolution retries per address (default: 3)"
     )
     parser.add_argument(
+        "-c",
+        "--count",
+        type=int,
+        default=0,
+        metavar="N",
+        help="Stop automatically after N spoof cycles instead of running until Ctrl+C "
+        "(default: 0 = unlimited)",
+    )
+    parser.add_argument(
         "-q", "--quiet", action="store_true", help="Suppress the banner and disclaimer"
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose (debug) logging")
@@ -104,9 +114,9 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _make_progress() -> Callable[[int], None]:
-    def progress(count: int) -> None:
-        sys.stdout.write(f"\r[+] Packets sent: {count}   ")
+def _make_progress() -> Callable[[int, int], None]:
+    def progress(packets: int, cycles: int) -> None:
+        sys.stdout.write(f"\r[+] Cycles: {cycles}   Packets sent: {packets}   ")
         sys.stdout.flush()
 
     return progress
@@ -181,12 +191,15 @@ def main(argv: Optional[List[str]] = None) -> int:
             jitter=args.jitter,
             timeout=args.timeout,
             retries=args.retries,
+            cycles=args.count,
         )
+        limit_note = f" for up to {args.count} cycles" if args.count else ""
         log.info(
-            "Starting ARP spoof: %s <-> %s (interface: %s)",
+            "Starting ARP spoof: %s <-> %s (interface: %s)%s",
             target,
             gateway,
             args.interface or "default",
+            limit_note,
         )
         progress = None if args.quiet else _make_progress()
         total = spoofer.run(progress=progress)

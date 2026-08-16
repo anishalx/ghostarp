@@ -16,6 +16,7 @@ def test_parser_defaults():
     assert args.jitter == 0.0
     assert args.timeout == 1.0
     assert args.retries == 3
+    assert args.count == 0
     assert args.verbose is False
     assert args.quiet is False
 
@@ -28,6 +29,7 @@ def test_parser_flags():
             "-i", "eth0",
             "--interval", "0.5",
             "--jitter", "0.2",
+            "-c", "10",
             "-v",
             "-q",
         ]
@@ -37,6 +39,7 @@ def test_parser_flags():
     assert args.interface == "eth0"
     assert args.interval == 0.5
     assert args.jitter == 0.2
+    assert args.count == 10
     assert args.verbose is True
     assert args.quiet is True
 
@@ -74,17 +77,20 @@ def test_main_refuses_self_as_target(monkeypatch, capsys):
 
 
 def test_main_happy_path(monkeypatch, capsys):
+    captured = {}
+
     class FakeSpoofer:
         def __init__(self, **kwargs):
-            self.kwargs = kwargs
+            captured.update(kwargs)
 
         def run(self, progress=None):
             return 42
 
     monkeypatch.setattr(cli, "Spoofer", FakeSpoofer)
     monkeypatch.setattr(cli, "get_route_source", lambda *a, **k: "192.168.1.100")
-    rc = cli.main(["-t", "192.168.1.50", "-g", "192.168.1.1", "-q"])
+    rc = cli.main(["-t", "192.168.1.50", "-g", "192.168.1.1", "-c", "7", "-q"])
     assert rc == 0
+    assert captured["cycles"] == 7
 
 
 def test_main_auto_detects_gateway(monkeypatch, capsys):

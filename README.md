@@ -71,8 +71,9 @@ python main.py -t 192.168.1.50 -g 192.168.1.1
 | `--jitter SECONDS` | Add a random delay of `0..jitter` to each interval (default `0.0`). |
 | `--timeout SECONDS` | Seconds to wait for ARP replies (default `1.0`). |
 | `--retries N` | ARP resolution retries per address (default `3`). |
+| `-c, --count N` | Stop automatically after N spoof cycles and restore ARP tables (default `0` = run until Ctrl+C). |
 | `-q, --quiet` | Suppress the banner and disclaimer. |
-| `-v, --verbose` | Debug-level logging. |
+| `-v, --verbose` | Debug-level logging, including details of every packet sent and MAC resolved. |
 | `--version` | Print the version and exit. |
 
 ### Examples
@@ -86,10 +87,71 @@ python -m ghostarp
 
 # Specific interface, slower and less disruptive cadence
 python -m ghostarp -t 192.168.1.50 -g 192.168.1.1 -i eth0 --interval 5 --jitter 2
+
+# Run exactly 100 cycles, then restore ARP tables and exit
+python -m ghostarp -t 192.168.1.50 -g 192.168.1.1 -c 100
+
+# Debug mode: log every packet sent (spoofed and restore) to stderr
+python -m ghostarp -t 192.168.1.50 -g 192.168.1.1 -v
 ```
 
 The tool prints a running packet count and stops on Ctrl+C. Before exiting it re-resolves and
 restores the real ARP entries for both the target and the gateway.
+
+## Making the MITM actually work: IP forwarding
+
+ARP spoofing only changes the data-link (MAC) mapping. For traffic to actually flow through
+your machine — and be captured and analyzed — the OS must forward IP packets:
+
+### Linux
+
+```bash
+sudo sysctl -w net.ipv4.ip_forward=1
+# persist across reboots:
+echo 'net.ipv4.ip_forward=1' | sudo tee /etc/sysctl.d/99-ghostarp.conf
+```
+
+Verify with `sysctl net.ipv4.ip_forward` (should print `1`).
+
+### macOS
+
+```bash
+sudo sysctl -w net.inet.ip.forwarding=1
+# persist across reboots: add `net.inet.ip.forwarding=1` to /etc/sysctl.conf
+```
+
+### Windows (PowerShell, elevated)
+
+```powershell
+Set-NetIPInterface -InterfaceAlias "Ethernet" -Forwarding Enabled
+# alternative via registry (requires reboot):
+#   reg add HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters /v IPEnableRouter /t REG_DWORD /d 1 /f
+```
+
+> **Firewall note:** some host firewalls drop *forwarded* traffic even when forwarding is
+> enabled (e.g. the Windows Defender Firewall or strict `iptables` FORWARD policies). If the
+> target loses connectivity mid-test, allow forwarded traffic through the firewall for the
+> test interface.
+
+**Quick verification:** while a spoof run is active, run `arp -a` on the target machine — the
+gateway's IP should resolve to *your* MAC address. `ping`/`traceroute` to the gateway should
+still work, confirming traffic is being relayed through your machine.
+
+## IPv6 support
+
+ARP is an **IPv4-only** protocol. IPv6 neighbor discovery uses NDP (ICMPv6), which GhostARP
+does **not** spoof — any IPv6 traffic between the target and gateway will bypass the test and
+won't be captured. If the target or gateway has working IPv6 (global or link-local), traffic
+may simply prefer the IPv6 path.
+
+Options for an IPv4-only test:
+
+- Run the assessment in an IPv4-only environment.
+- Disable IPv6 on the test interfaces: on Windows uncheck *Internet Protocol Version 6 (TCP/IPv6)*
+  in the adapter properties; on Linux run `sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1`.
+
+IPv6 NDP spoofing is out of scope for this tool; GhostARP itself works fine on machines that
+have IPv6 enabled, it just cannot redirect that traffic.
 
 ## Development
 
