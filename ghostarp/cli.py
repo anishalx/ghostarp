@@ -122,6 +122,21 @@ def _make_progress() -> Callable[[int, int], None]:
     return progress
 
 
+def _prompt(prompt: str) -> str:
+    """Read a line from stdin, failing clearly when no terminal is available.
+
+    Non-interactive runs (CI, cron, piped stdin) make input() raise EOFError;
+    surface that as a normal GhostARPError pointing at the -t flag instead of
+    the generic "unexpected error" path.
+    """
+    try:
+        return input(prompt).strip()
+    except EOFError:
+        raise GhostARPError(
+            "No interactive terminal available; pass -t/--target (and -g/--gateway) explicitly."
+        ) from None
+
+
 def choose_target(interface: Optional[str], timeout: float) -> str:
     """Auto-discover a target from the local subnet, prompting if ambiguous."""
     hosts: List[str] = []
@@ -137,12 +152,12 @@ def choose_target(interface: Optional[str], timeout: float) -> str:
         if len(hosts) == 1:
             print(f"[+] Auto-selected {hosts[0]}")
             return hosts[0]
-        choice = input("Select target by number, or press Enter to type an IP: ").strip()
+        choice = _prompt("Select target by number, or press Enter to type an IP: ")
         if choice.isdigit() and 1 <= int(choice) <= len(hosts):
             return hosts[int(choice) - 1]
 
     while True:
-        ip = input("Enter Target IP: ").strip()
+        ip = _prompt("Enter Target IP: ")
         if is_valid_ipv4(ip):
             return ip
         print(f"[!] Invalid IP address: {ip!r}. Please enter a valid IPv4 address.")

@@ -184,3 +184,27 @@ def test_choose_target_scan_failure_falls_back(monkeypatch, capsys):
     monkeypatch.setattr(cli, "scan_hosts", _raise(GhostARPError("nope")))
     monkeypatch.setattr("builtins.input", lambda _prompt: "192.168.1.50")
     assert cli.choose_target(None, 1.0) == "192.168.1.50"
+
+
+def test_choose_target_non_interactive_multiple_hosts_raises_clear_error(monkeypatch):
+    # No tty (CI/cron/piped stdin): input() raises EOFError. That must become
+    # a clear GhostARPError, not the generic "unexpected error" path.
+    monkeypatch.setattr(cli, "scan_hosts", lambda *a, **k: ["192.168.1.50", "192.168.1.51"])
+
+    def _eof(_prompt):
+        raise EOFError
+
+    monkeypatch.setattr("builtins.input", _eof)
+    with pytest.raises(GhostARPError, match="-t/--target"):
+        cli.choose_target(None, 1.0)
+
+
+def test_choose_target_non_interactive_no_hosts_raises_clear_error(monkeypatch):
+    monkeypatch.setattr(cli, "scan_hosts", lambda *a, **k: [])
+
+    def _eof(_prompt):
+        raise EOFError
+
+    monkeypatch.setattr("builtins.input", _eof)
+    with pytest.raises(GhostARPError, match="-t/--target"):
+        cli.choose_target(None, 1.0)
